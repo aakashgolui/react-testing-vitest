@@ -9,7 +9,7 @@ function ProductListPage() {
   const { data: products, isLoading, error } = useProducts();
 
   const renderProducts = () => {
-    if (isLoading) return <div>Loading...</div>;
+    if (isLoading) return <div className="h-[900vh]">Loading...</div>;
 
     if (error) return <div>Error: {error.message}</div>;
 
