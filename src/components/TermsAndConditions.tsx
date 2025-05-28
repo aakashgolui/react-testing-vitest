@@ -4,7 +4,7 @@ const TermsAndConditions = () => {
   const [isChecked, setIsChecked] = useState(false);
 
   return (
-    <div>
+    <div className="container mx-auto p-4 h-svh">
       <h1>Terms & Conditions</h1>
       <p>
         Lorem ipsum dolor, sit amet consectetur adipisicing elit. Autem,

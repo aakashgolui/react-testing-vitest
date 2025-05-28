@@ -35,6 +35,11 @@ a:hover {
   border-radius: 5px;
 }
 
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .input {
   border: 1px solid #ccc;
   border-radius: 5px;
