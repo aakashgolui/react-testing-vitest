@@ -18,9 +18,7 @@ describe('Terms and Conditions', () => {
         const { button, checkbox, heading } = renderComponent();
 
         expect(heading).toHaveTextContent('Terms & Conditions');
-
         expect(checkbox).not.toBeChecked();
-
         expect(button).toBeDisabled();
     })
 
