@@ -5,14 +5,18 @@ import userEvent from "@testing-library/user-event"
 
 describe('OrderStatusSelector', () => {
     const renderComponent = () => {
+        const onChange = vi.fn();
         render(
             <Theme>
-                <OrderStatusSelector onChange={vi.fn()} />
+                <OrderStatusSelector onChange={onChange} />
             </Theme>
         );
         return {
             user: userEvent.setup(),
             button: screen.getByRole('combobox'),
+            getOptions: () => screen.getAllByRole('option'),
+            getOption: (name: RegExp) => screen.getByRole('option', { name }),
+            onChange
         }
     }
 
@@ -25,14 +29,41 @@ describe('OrderStatusSelector', () => {
     });
 
     it('should render correct statuses', async () => {
-        const { button, user, } = renderComponent();
+        const { button, user, getOptions } = renderComponent();
 
         await user.click(button);
 
-        const options = await screen.findAllByRole('option');
+        const options = getOptions();
         expect(options.length).toBe(3);
 
-        const labels = await options.map(option => option.textContent);
+        const labels = options.map(option => option.textContent);
         expect(labels).toEqual(['New', 'Processed', 'Fulfilled']);
+    })
+
+    it.each([
+        { value: 'processed', label: /processed/i },
+        { value: 'fulfilled', label: /fulfilled/i }
+    ])('should call onChange on selecting $label option with correct value', async ({ label, value }) => {
+        const { button, user, onChange, getOption } = renderComponent();
+        await user.click(button);
+
+        const option = getOption(label);
+        await user.click(option);
+
+        expect(onChange).toHaveBeenCalledWith(value);
+    })
+
+    it('should call onChange on selecting new option with correct value', async () => {
+        const { button, user, onChange, getOption } = renderComponent();
+        await user.click(button);
+
+        const optionFull = getOption(/fulfilled/i);
+        await user.click(optionFull);
+
+        await user.click(button);
+        const optionNew = getOption(/new/i);
+        await user.click(optionNew);
+
+        expect(onChange).toHaveBeenCalledWith('new');
     })
 })
