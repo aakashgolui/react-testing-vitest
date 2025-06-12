@@ -3,10 +3,11 @@ import {
   screen,
   waitForElementToBeRemoved,
 } from "@testing-library/react";
+import { delay, http, HttpResponse } from "msw";
 import ProductDetail from "../../src/components/ProductDetail";
-import { http, HttpResponse, delay } from "msw";
-import { server } from "../mocks/server";
+import AllProviders from "../AllProviders";
 import { db } from "../mocks/db";
+import { server } from "../mocks/server";
 
 describe("ProductDetail", () => {
   let productId: number;
@@ -24,7 +25,7 @@ describe("ProductDetail", () => {
       where: { id: { equals: productId } },
     });
 
-    render(<ProductDetail productId={productId} />);
+    render(<ProductDetail productId={productId} />, { wrapper: AllProviders });
 
     expect(
       await screen.findByText(new RegExp(product!.name))
@@ -38,14 +39,14 @@ describe("ProductDetail", () => {
   it("should should render message if product is not found", async () => {
     server.use(http.get("/products/1", () => HttpResponse.json(null)));
 
-    render(<ProductDetail productId={1} />);
+    render(<ProductDetail productId={1} />, { wrapper: AllProviders });
 
     const text = await screen.findByText(/product was not found/i);
     expect(text).toBeInTheDocument();
   });
 
   it("should render error for invalid productID", async () => {
-    render(<ProductDetail productId={0} />);
+    render(<ProductDetail productId={0} />, { wrapper: AllProviders });
 
     const text = await screen.findByText(/invalid/i);
     expect(text).toBeInTheDocument();
@@ -54,7 +55,7 @@ describe("ProductDetail", () => {
   it("should render an error if data fetching fails", async () => {
     server.use(http.get("/products/1", () => HttpResponse.error()));
 
-    render(<ProductDetail productId={1} />);
+    render(<ProductDetail productId={1} />, { wrapper: AllProviders });
 
     const text = await screen.findByText(/error/i);
     expect(text).toBeInTheDocument();
@@ -67,7 +68,7 @@ describe("ProductDetail", () => {
         return HttpResponse.json([]);
       })
     );
-    render(<ProductDetail productId={1} />);
+    render(<ProductDetail productId={1} />, { wrapper: AllProviders });
 
     const text = await screen.findByText(/loading/i);
     expect(text).toBeInTheDocument();
@@ -81,14 +82,14 @@ describe("ProductDetail", () => {
       })
     );
 
-    render(<ProductDetail productId={1} />);
+    render(<ProductDetail productId={1} />, { wrapper: AllProviders });
 
     const text = await screen.findByText(/loading/i);
     expect(text).toBeInTheDocument();
   });
 
   it("should remove the loading indicator after the data is fetched", async () => {
-    render(<ProductDetail productId={1} />);
+    render(<ProductDetail productId={1} />, { wrapper: AllProviders });
 
     await waitForElementToBeRemoved(() => screen.queryByText(/loading/i));
   });
@@ -96,7 +97,7 @@ describe("ProductDetail", () => {
   it("should remove the loading indicator if data fetch fails", async () => {
     server.use(http.get("/products/1", () => HttpResponse.error()));
 
-    render(<ProductDetail productId={1} />);
+    render(<ProductDetail productId={1} />, { wrapper: AllProviders });
 
     await waitForElementToBeRemoved(() => screen.queryByText(/loading/i));
   });
