@@ -1,69 +1,17 @@
+import { Theme } from "@radix-ui/themes";
 import {
   render,
   screen,
   waitForElementToBeRemoved,
 } from "@testing-library/react";
-import BrowseProducts from "../../src/pages/BrowseProductsPage";
 import userEvent from "@testing-library/user-event";
-import { db, getProductsByCategory } from "../mocks/db";
 import { Category, Product } from "../../src/entities";
+import BrowseProducts from "../../src/pages/BrowseProductsPage";
 import { CartProvider } from "../../src/providers/CartProvider";
-import { Theme } from "@radix-ui/themes";
+import { db, getProductsByCategory } from "../mocks/db";
 import { simulateDelay, simulateError } from "../utils";
 
 describe("BrowseProducts", () => {
-  const renderComponent = () => {
-    render(
-      <CartProvider>
-        <Theme>
-          <BrowseProducts />
-        </Theme>
-      </CartProvider>
-    );
-
-    const user = userEvent.setup();
-
-    const getCategoriesComboBox = () => screen.queryByRole("combobox");
-
-    const getCategoriesSkeleton = () =>
-      screen.getByRole("progressbar", { name: /categories/i });
-
-    const getOption = (name: RegExp | string) =>
-      screen.getByRole("option", { name });
-    const getText = (name: string) => screen.getByText(name);
-
-    const expectProductsToBeInTheDocument = (products: Product[]) => {
-      const getDataRows = screen.getAllByRole("row")?.slice(1);
-      expect(getDataRows).toHaveLength(products.length);
-
-      products.forEach((product) => {
-        expect(getText(product.name)).toBeInTheDocument();
-      });
-    };
-
-    const selectCategory = async (name: RegExp | string) => {
-      await waitForElementToBeRemoved(getCategoriesSkeleton);
-      const comboBox = getCategoriesComboBox();
-      await user.click(comboBox!);
-
-      const option = getOption(name);
-      await user.click(option);
-    };
-
-    return {
-      getProductsSkeleton: () =>
-        screen.queryByRole("progressbar", { name: /products/i }),
-      getCategoriesSkeleton,
-      getCategoriesComboBox,
-      getErrorText: () => screen.queryByText(/error/i),
-      user,
-      selectCategory,
-      getText,
-      getOption,
-      expectProductsToBeInTheDocument,
-    };
-  };
-
   const categories: Category[] = [];
   const products: Product[] = [];
 
@@ -181,4 +129,56 @@ describe("BrowseProducts", () => {
 
     expectProductsToBeInTheDocument(products);
   });
+
+  const renderComponent = () => {
+    render(
+      <CartProvider>
+        <Theme>
+          <BrowseProducts />
+        </Theme>
+      </CartProvider>
+    );
+
+    const user = userEvent.setup();
+
+    const getCategoriesComboBox = () => screen.queryByRole("combobox");
+
+    const getCategoriesSkeleton = () =>
+      screen.getByRole("progressbar", { name: /categories/i });
+
+    const getOption = (name: RegExp | string) =>
+      screen.getByRole("option", { name });
+    const getText = (name: string) => screen.getByText(name);
+
+    const expectProductsToBeInTheDocument = (products: Product[]) => {
+      const getDataRows = screen.getAllByRole("row")?.slice(1);
+      expect(getDataRows).toHaveLength(products.length);
+
+      products.forEach((product) => {
+        expect(getText(product.name)).toBeInTheDocument();
+      });
+    };
+
+    const selectCategory = async (name: RegExp | string) => {
+      await waitForElementToBeRemoved(getCategoriesSkeleton);
+      const comboBox = getCategoriesComboBox();
+      await user.click(comboBox!);
+
+      const option = getOption(name);
+      await user.click(option);
+    };
+
+    return {
+      getProductsSkeleton: () =>
+        screen.queryByRole("progressbar", { name: /products/i }),
+      getCategoriesSkeleton,
+      getCategoriesComboBox,
+      getErrorText: () => screen.queryByText(/error/i),
+      user,
+      selectCategory,
+      getText,
+      getOption,
+      expectProductsToBeInTheDocument,
+    };
+  };
 });
