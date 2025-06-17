@@ -5,7 +5,7 @@ import {
 } from "@testing-library/react";
 import BrowseProducts from "../../src/pages/BrowseProductsPage";
 import userEvent from "@testing-library/user-event";
-import { db } from "../mocks/db";
+import { db, getProductsByCategory } from "../mocks/db";
 import { Category, Product } from "../../src/entities";
 import { CartProvider } from "../../src/providers/CartProvider";
 import { Theme } from "@radix-ui/themes";
@@ -30,6 +30,25 @@ describe("BrowseProducts", () => {
 
     const getOption = (name: RegExp | string) =>
       screen.getByRole("option", { name });
+    const getText = (name: string) => screen.getByText(name);
+
+    const expectProductsToBeInTheDocument = (products: Product[]) => {
+      const getDataRows = screen.getAllByRole("row")?.slice(1);
+      expect(getDataRows).toHaveLength(products.length);
+
+      products.forEach((product) => {
+        expect(getText(product.name)).toBeInTheDocument();
+      });
+    };
+
+    const selectCategory = async (name: RegExp | string) => {
+      await waitForElementToBeRemoved(getCategoriesSkeleton);
+      const comboBox = getCategoriesComboBox();
+      await user.click(comboBox!);
+
+      const option = getOption(name);
+      await user.click(option);
+    };
 
     return {
       getProductsSkeleton: () =>
@@ -38,17 +57,10 @@ describe("BrowseProducts", () => {
       getCategoriesComboBox,
       getErrorText: () => screen.queryByText(/error/i),
       user,
-      selectCategory: async (name: RegExp | string) => {
-        await waitForElementToBeRemoved(getCategoriesSkeleton);
-        const comboBox = getCategoriesComboBox();
-        await user.click(comboBox!);
-
-        const option = getOption(name);
-        await user.click(option);
-      },
-      getDataRows: () => screen.getAllByRole("row")?.slice(1),
-      getText: (name: string) => screen.getByText(name),
+      selectCategory,
+      getText,
       getOption,
+      expectProductsToBeInTheDocument,
     };
   };
 
@@ -149,34 +161,24 @@ describe("BrowseProducts", () => {
   });
 
   it("should filter products by category", async () => {
-    const { selectCategory, getDataRows, getText } = renderComponent();
+    const { selectCategory, expectProductsToBeInTheDocument } =
+      renderComponent();
     const selectedCategory = categories[0];
     await selectCategory(selectedCategory.name);
 
-    const products = db.product.findMany({
-      where: {
-        categoryId: { equals: selectedCategory.id },
-      },
-    });
+    const products = getProductsByCategory(selectedCategory.id);
 
-    expect(getDataRows()).toHaveLength(products.length);
-
-    products.forEach((product) => {
-      expect(getText(product.name)).toBeInTheDocument();
-    });
+    expectProductsToBeInTheDocument(products);
   });
 
   it("should all products if 'All' category is selected", async () => {
-    const { selectCategory, getDataRows, getText } = renderComponent();
+    const { selectCategory, expectProductsToBeInTheDocument } =
+      renderComponent();
 
     await selectCategory(/all/i);
 
     const products = db.product.getAll();
 
-    expect(getDataRows()).toHaveLength(products.length);
-
-    products.forEach((product) => {
-      expect(getText(product.name)).toBeInTheDocument();
-    });
+    expectProductsToBeInTheDocument(products);
   });
 });
