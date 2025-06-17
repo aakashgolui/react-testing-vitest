@@ -1,8 +1,7 @@
-import SearchBox from "../components/SearchBox";
+import BrowseProducts from "./BrowseProductsPage";
 
 const PlaygroundPage = () => {
-
-  return <SearchBox onChange={(e) => console.log(e)} />;
+  return <BrowseProducts />;
 };
 
 export default PlaygroundPage;
