@@ -1,5 +1,6 @@
 import { Select, Skeleton } from "@radix-ui/themes";
 import axios from "axios";
+import { memo } from "react";
 import { useQuery } from "react-query";
 import { Category } from "../entities";
 
@@ -48,4 +49,4 @@ const CategorySelect = ({
   );
 };
 
-export default CategorySelect;
+export default memo(CategorySelect);
