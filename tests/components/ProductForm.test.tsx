@@ -26,23 +26,15 @@ describe("ProductForm", () => {
   });
 
   it("should render form fields", async () => {
-    const {
-      getFieldsByPlaceholder,
-      waitForLoader,
-      getOption,
-      user,
-      getCategoriesCombobox,
-    } = renderComponent();
-    await waitForLoader();
+    const { waitForFormToLoad, getOption, user } = renderComponent();
+    const { categoryInput, nameInput, priceInput } = await waitForFormToLoad();
 
-    expect(getFieldsByPlaceholder(/name/i)).toBeInTheDocument();
-    expect(getFieldsByPlaceholder(/price/i)).toBeInTheDocument();
+    expect(nameInput).toBeInTheDocument();
+    expect(priceInput).toBeInTheDocument();
 
-    const comboBox = getCategoriesCombobox();
+    expect(categoryInput).toBeInTheDocument();
 
-    expect(comboBox).toBeInTheDocument();
-
-    await user.click(comboBox!);
+    await user.click(categoryInput!);
 
     categories.forEach((cat) => {
       expect(getOption(cat.name)).toBeInTheDocument();
@@ -51,34 +43,42 @@ describe("ProductForm", () => {
 
   it("should load with initial data on edition a product", async () => {
     const product = db.product.create({ categoryId: categories[0].id });
-    const { waitForLoader, getFieldsByPlaceholder, getCategoriesCombobox } =
-      renderComponent(product);
-    await waitForLoader();
+    const { waitForFormToLoad } = renderComponent(product);
+    const { categoryInput, nameInput, priceInput } = await waitForFormToLoad();
 
-    expect(getFieldsByPlaceholder(/name/i)).toHaveValue(product.name);
-    expect(getFieldsByPlaceholder(/price/i)).toHaveValue(
-      product.price.toString()
-    );
+    expect(nameInput).toHaveValue(product.name);
+    expect(priceInput).toHaveValue(product.price.toString());
 
-    expect(getCategoriesCombobox()).toHaveTextContent(categories[0].name);
+    expect(categoryInput).toHaveTextContent(categories[0].name);
+  });
+
+  it("should put focus on the name field", async () => {
+    const { waitForFormToLoad } = renderComponent();
+    const { nameInput } = await waitForFormToLoad();
+
+    expect(nameInput).toHaveFocus();
   });
 
   const renderComponent = (product?: Product | undefined) => {
     render(<ProductForm product={product} onSubmit={vi.fn()} />, {
       wrapper: AllProviders,
     });
+
     return {
       user: userEvent.setup(),
-      waitForLoader: async () =>
-        await waitForElementToBeRemoved(() => screen.getByText(/loading/i)),
-      getFieldsByPlaceholder: (placeholder: RegExp) =>
-        screen.getByPlaceholderText(placeholder),
+      waitForFormToLoad: async () => {
+        await waitForElementToBeRemoved(() => screen.getByText(/loading/i));
+
+        return {
+          nameInput: screen.getByPlaceholderText(/name/i),
+          priceInput: screen.getByPlaceholderText(/price/i),
+          categoryInput: screen.getByRole("combobox", {
+            name: /category/i,
+          }),
+        };
+      },
       getOption: (name: RegExp | string) =>
         screen.getByRole("option", { name }),
-      getCategoriesCombobox: () =>
-        screen.getByRole("combobox", {
-          name: /category/i,
-        }),
     };
   };
 });
