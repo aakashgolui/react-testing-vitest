@@ -59,6 +59,68 @@ describe("ProductForm", () => {
     expect(nameInput).toHaveFocus();
   });
 
+  it.each([
+    { scenario: "missing", errorMessage: /required/i },
+    {
+      scenario: "longer than 255 characters",
+      name: "a".repeat(256),
+      errorMessage: /255 character/i,
+    },
+  ])(
+    "should display error if name is $scenario",
+    async ({ errorMessage, name }) => {
+      const { waitForFormToLoad, user } = renderComponent();
+      const form = await waitForFormToLoad();
+      if (name !== undefined) {
+        await user.type(form.nameInput, name);
+      }
+      await user.type(form.priceInput, "10");
+      await user.click(form.categoryInput);
+      const options = screen.getAllByRole("option");
+      await user.click(options[0]);
+      await user.click(form.submitButton);
+
+      const error = screen.getByRole("alert");
+
+      expect(error).toBeInTheDocument();
+      expect(error).toHaveTextContent(errorMessage);
+    }
+  );
+
+  it.each([
+    { scenario: "missing", errorMessage: /required/i },
+    {
+      scenario: "negative",
+      price: -1,
+      errorMessage: /greater than or equal to 1/i,
+    },
+    {
+      scenario: "greater than 1000",
+      price: 1001,
+      errorMessage: /less than or equal to 1000/i,
+    },
+  ])(
+    "should display error if price is $scenario",
+    async ({ errorMessage, price }) => {
+      const { waitForFormToLoad, user } = renderComponent();
+      const form = await waitForFormToLoad();
+
+      await user.type(form.nameInput, "Books");
+      if (price !== undefined) {
+        await user.type(form.priceInput, price.toString());
+      }
+      await user.click(form.categoryInput);
+      const options = screen.getAllByRole("option");
+      await user.click(options[0]);
+      await user.click(form.submitButton);
+
+      const error = screen.getByRole("alert");
+
+      expect(error).toBeInTheDocument();
+      expect(error).toHaveTextContent(errorMessage);
+    }
+  );
+
   const renderComponent = (product?: Product | undefined) => {
     render(<ProductForm product={product} onSubmit={vi.fn()} />, {
       wrapper: AllProviders,
@@ -75,6 +137,7 @@ describe("ProductForm", () => {
           categoryInput: screen.getByRole("combobox", {
             name: /category/i,
           }),
+          submitButton: screen.getByRole("button"),
         };
       },
       getOption: (name: RegExp | string) =>
