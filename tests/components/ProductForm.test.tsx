@@ -4,6 +4,7 @@ import {
   waitForElementToBeRemoved,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Toaster } from "react-hot-toast";
 import ProductForm from "../../src/components/ProductForm";
 import { Category, Product } from "../../src/entities";
 import AllProviders from "../AllProviders";
@@ -115,10 +116,39 @@ describe("ProductForm", () => {
     }
   );
 
+  it("should submit form with correct data", async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+
+    const { fill, validData } = await waitForFormToLoad();
+    await fill(validData);
+    const { id, ...formData } = validData;
+
+    expect(onSubmit).toBeCalledWith(formData);
+  });
+
+  it("should display an error toast if submission fails", async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+    onSubmit.mockRejectedValue({});
+
+    const { fill, validData } = await waitForFormToLoad();
+    await fill(validData);
+
+    const errorToast = await screen.findByRole("status");
+    expect(errorToast).toBeInTheDocument();
+    expect(errorToast).toHaveTextContent(/error/i);
+  });
+
   const renderComponent = (product?: Product | undefined) => {
-    render(<ProductForm product={product} onSubmit={vi.fn()} />, {
-      wrapper: AllProviders,
-    });
+    const onSubmit = vi.fn();
+    render(
+      <>
+        <ProductForm product={product} onSubmit={onSubmit} />
+        <Toaster />
+      </>,
+      {
+        wrapper: AllProviders,
+      }
+    );
 
     const user = userEvent.setup();
 
@@ -149,7 +179,7 @@ describe("ProductForm", () => {
           id: 1,
           name: "q",
           price: 10,
-          categoryId: 1,
+          categoryId: categories[0].id,
         };
         const fill = async (fromData: FormData) => {
           if (fromData.name !== undefined) {
@@ -175,6 +205,7 @@ describe("ProductForm", () => {
           validData,
         };
       },
+      onSubmit,
       getOption: (name: RegExp | string) =>
         screen.getByRole("option", { name }),
     };
