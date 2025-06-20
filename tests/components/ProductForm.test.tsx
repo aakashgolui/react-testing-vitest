@@ -128,7 +128,7 @@ describe("ProductForm", () => {
 
   it("should display an error toast if submission fails", async () => {
     const { waitForFormToLoad, onSubmit } = renderComponent();
-    onSubmit.mockRejectedValue({});
+    onSubmit.mockRejectedValue("error");
 
     const { fill, validData } = await waitForFormToLoad();
     await fill(validData);
@@ -136,6 +136,36 @@ describe("ProductForm", () => {
     const errorToast = await screen.findByRole("status");
     expect(errorToast).toBeInTheDocument();
     expect(errorToast).toHaveTextContent(/error/i);
+  });
+
+  it("should disable the submit button while submitting the form", async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+    onSubmit.mockReturnValue(new Promise(() => {}));
+
+    const { fill, validData, submitButton } = await waitForFormToLoad();
+    await fill(validData);
+
+    expect(submitButton).toBeDisabled();
+  });
+
+  it("should re-enable the submit button form submit", async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+    onSubmit.mockResolvedValue({});
+
+    const { fill, validData, submitButton } = await waitForFormToLoad();
+    await fill(validData);
+
+    expect(submitButton).not.toBeDisabled();
+  });
+
+  it("should not allow white space in name input", async () => {
+    const { waitForFormToLoad, expectErrorToBeInTheDocument } =
+      renderComponent();
+
+    const { fill, validData } = await waitForFormToLoad();
+    await fill({ ...validData, name: " " });
+
+    expectErrorToBeInTheDocument(/required/i);
   });
 
   const renderComponent = (product?: Product | undefined) => {
