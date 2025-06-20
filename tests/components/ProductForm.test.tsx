@@ -69,21 +69,16 @@ describe("ProductForm", () => {
   ])(
     "should display error if name is $scenario",
     async ({ errorMessage, name }) => {
-      const { waitForFormToLoad, user } = renderComponent();
-      const form = await waitForFormToLoad();
-      if (name !== undefined) {
-        await user.type(form.nameInput, name);
-      }
-      await user.type(form.priceInput, "10");
-      await user.click(form.categoryInput);
-      const options = screen.getAllByRole("option");
-      await user.click(options[0]);
-      await user.click(form.submitButton);
+      const { waitForFormToLoad, expectErrorToBeInTheDocument } =
+        renderComponent();
+      const { fill, validData } = await waitForFormToLoad();
 
-      const error = screen.getByRole("alert");
+      await fill({
+        ...validData,
+        name,
+      });
 
-      expect(error).toBeInTheDocument();
-      expect(error).toHaveTextContent(errorMessage);
+      expectErrorToBeInTheDocument(errorMessage);
     }
   );
 
@@ -99,25 +94,24 @@ describe("ProductForm", () => {
       price: 1001,
       errorMessage: /less than or equal to 1000/i,
     },
+    {
+      scenario: "not a number",
+      price: "a",
+      errorMessage: /required/i,
+    },
   ])(
     "should display error if price is $scenario",
     async ({ errorMessage, price }) => {
-      const { waitForFormToLoad, user } = renderComponent();
-      const form = await waitForFormToLoad();
+      const { waitForFormToLoad, expectErrorToBeInTheDocument } =
+        renderComponent();
+      const { fill, validData } = await waitForFormToLoad();
 
-      await user.type(form.nameInput, "Books");
-      if (price !== undefined) {
-        await user.type(form.priceInput, price.toString());
-      }
-      await user.click(form.categoryInput);
-      const options = screen.getAllByRole("option");
-      await user.click(options[0]);
-      await user.click(form.submitButton);
+      await fill({
+        ...validData,
+        price,
+      });
 
-      const error = screen.getByRole("alert");
-
-      expect(error).toBeInTheDocument();
-      expect(error).toHaveTextContent(errorMessage);
+      expectErrorToBeInTheDocument(errorMessage);
     }
   );
 
@@ -126,18 +120,59 @@ describe("ProductForm", () => {
       wrapper: AllProviders,
     });
 
+    const user = userEvent.setup();
+
     return {
-      user: userEvent.setup(),
+      user,
+      expectErrorToBeInTheDocument: (errorMessage: RegExp) => {
+        const error = screen.getByRole("alert");
+
+        expect(error).toBeInTheDocument();
+        expect(error).toHaveTextContent(errorMessage);
+      },
       waitForFormToLoad: async () => {
         await waitForElementToBeRemoved(() => screen.getByText(/loading/i));
 
+        const nameInput = screen.getByPlaceholderText(/name/i);
+
+        const priceInput = screen.getByPlaceholderText(/price/i);
+
+        const categoryInput = screen.getByRole("combobox", {
+          name: /category/i,
+        });
+
+        const submitButton = screen.getByRole("button");
+        type FormData = {
+          [K in keyof Product]: any;
+        };
+        const validData: FormData = {
+          id: 1,
+          name: "q",
+          price: 10,
+          categoryId: 1,
+        };
+        const fill = async (fromData: FormData) => {
+          if (fromData.name !== undefined) {
+            await user.type(nameInput, fromData.name);
+          }
+
+          if (fromData.price !== undefined) {
+            await user.type(priceInput, fromData.price.toString());
+          }
+
+          await user.tab();
+          await user.click(categoryInput);
+          const options = screen.getAllByRole("option");
+          await user.click(options[0]);
+          await user.click(submitButton);
+        };
         return {
-          nameInput: screen.getByPlaceholderText(/name/i),
-          priceInput: screen.getByPlaceholderText(/price/i),
-          categoryInput: screen.getByRole("combobox", {
-            name: /category/i,
-          }),
-          submitButton: screen.getByRole("button"),
+          nameInput,
+          priceInput,
+          categoryInput,
+          submitButton,
+          fill,
+          validData,
         };
       },
       getOption: (name: RegExp | string) =>
