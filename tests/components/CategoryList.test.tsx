@@ -3,12 +3,11 @@ import {
   screen,
   waitForElementToBeRemoved,
 } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
 import CategoryList from "../../src/components/CategoryList";
 import { Category } from "../../src/entities";
 import AllProviders from "../AllProviders";
 import { db } from "../mocks/db";
-import { server } from "../mocks/server";
+import { simulateDelay, simulateError } from "../utils";
 
 describe("CategoryList", () => {
   const categories: Category[] = [];
@@ -39,6 +38,8 @@ describe("CategoryList", () => {
   };
 
   it("should show loading while categories are getting fetched", async () => {
+    simulateDelay("/categories");
+
     renderComponent();
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -56,7 +57,7 @@ describe("CategoryList", () => {
   });
 
   it("should give an error if API fetch fails", async () => {
-    server.use(http.get("/categories", () => HttpResponse.error()));
+    simulateError("/categories");
     const { waitForLoaderToBeRemoved } = renderComponent();
 
     await waitForLoaderToBeRemoved();
